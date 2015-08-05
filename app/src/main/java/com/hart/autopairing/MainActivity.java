@@ -36,6 +36,12 @@ public class MainActivity extends Activity
             {
                 Log.i(TAG, "Filter |------ " +  "DevicePaired");
             }
+
+            @Override
+            public void onScanResult(BTScanResult scanResult)
+            {
+                Log.i(TAG, "Filter |------ " +  "DeviceID = " + scanResult.deviceID + " | Mac Address = " + scanResult.macAddress + " | Serial Number = " + scanResult.serialNumber);
+            }
         });
 
         AutoPairing.addRequiredDevice("myglucohealth", "BTC", 1);

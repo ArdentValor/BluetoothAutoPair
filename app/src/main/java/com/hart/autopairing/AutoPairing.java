@@ -12,15 +12,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.util.Log;
-
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 
 /**
  * Created by Alex on 8/3/15.
@@ -33,6 +29,7 @@ public class AutoPairing
 
     private static BluetoothLeScanner bluetoothLeScanner;
     private static ScanCallback scanCallback;
+    private static BluetoothDevice currentDevice;
 
     private static Context context;
     private static CBInterface cbInterface;
@@ -80,14 +77,16 @@ public class AutoPairing
                     {
                         // Get device from intent
                         BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        device.setPairingConfirmation(true);
 
                         String name = device.getName();
                         if (name != null && name.contains(getNameByID(currentScanID)))
                         {
                             cbInterface.onDeviceFound(device.getName());
-                            if(pairDevice(device))
+                            if (pairDevice(device))
                             {
                                 cbInterface.onDevicePaired(currentScanID);
+                                cbInterface.onScanResult(new BTScanResult(currentScanID, device.getAddress(), device.getAddress()));
                                 releaseScanResources();
                             }
                         }
@@ -111,15 +110,34 @@ public class AutoPairing
 
                     BluetoothDevice device = result.getDevice();
 
-                    //if (device.getBondState() == BluetoothDevice.BOND_NONE)
-                    if (!getBondState(getNameByID(currentScanID)))
+
+                    if (device.getName().contains("Nonin"))
+                    {
+                        if (!bondLock)
+                        {
+                            cbInterface.onDeviceFound("STARTING BOND!");
+                            bluetoothLeScanner.flushPendingScanResults(scanCallback);
+                            currentDevice = device;
+                            device.connectGatt(context, true, null);
+                            bondLock = true;
+                            handler.postDelayed(noninBondState, 500L);
+                        }
+                        else
+                        {
+                            bluetoothLeScanner.flushPendingScanResults(scanCallback);
+                            cbInterface.onDeviceFound("BONDING");
+                        }
+                    }
+                    else if (!getBondState(getNameByID(currentScanID)))
                     {
                         //if (!bondLock)
                         {
-                            bondLock = true;
-                            device.createBond();
                             cbInterface.onDeviceFound("STARTING BOND!");
-                            handler.postDelayed(checkBondState, 1000L);
+                            bondLock = true;
+                            currentDevice = device;
+                            device.createBond();
+                            device.getBondState();
+                            handler.postDelayed(checkBondState, 300L);
                             releaseScanResources();
                         }
                     }
@@ -127,6 +145,25 @@ public class AutoPairing
             }
         };
     }
+
+    private static Runnable noninBondState = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            if (getBondState("Nonin"))
+            {
+                cbInterface.onDevicePaired(currentScanID);
+                cbInterface.onScanResult(new BTScanResult(currentScanID, currentDevice.getAddress(), currentDevice.getName().replace("Nonin", "")));
+                handler.removeCallbacks(noninBondState);
+                releaseScanResources();
+            }
+            else
+            {
+                handler.postDelayed(noninBondState, 500L);
+            }
+        }
+    };
 
     private static Runnable checkBondState = new Runnable()
     {
@@ -136,13 +173,20 @@ public class AutoPairing
             if (getBondState(getNameByID(currentScanID)))
             {
                 cbInterface.onDevicePaired(currentScanID);
+                if (currentDevice.getName().contains("A&D_UA"))
+                {
+                    cbInterface.onScanResult(new BTScanResult(currentScanID, currentDevice.getAddress(), currentDevice.getName().replace("A&D_UA-", "")));
+                }
+                else if (currentDevice.getName().contains("A&D_UC"))
+                {
+                    cbInterface.onScanResult(new BTScanResult(currentScanID, currentDevice.getAddress(), currentDevice.getName().replace("A&D_UC-", "")));
+                }
                 handler.removeCallbacks(checkBondState);
-                bondLock = false;
                 releaseScanResources();
             }
             else
             {
-                handler.postDelayed(checkBondState, 1000L);
+                handler.postDelayed(checkBondState, 300L);
                 scanByID(currentScanID);
             }
         }
@@ -164,6 +208,7 @@ public class AutoPairing
 
     private static void releaseScanResources()
     {
+        bondLock = false;
         cbInterface.onDeviceFound("Release Called!");
         if (currentScanMode.equals("BTC"))
         {
@@ -206,7 +251,7 @@ public class AutoPairing
         Iterator i = requiredDevices.entrySet().iterator();
         while (i.hasNext())
         {
-            Map.Entry pair = (Map.Entry)i.next();
+            Map.Entry pair = (Map.Entry) i.next();
             BTDevice cd = (BTDevice) pair.getValue();
             if (cd.deviceID == id)
             {
@@ -224,7 +269,7 @@ public class AutoPairing
         Iterator i = requiredDevices.entrySet().iterator();
         while (i.hasNext())
         {
-            Map.Entry pair = (Map.Entry)i.next();
+            Map.Entry pair = (Map.Entry) i.next();
             BTDevice cd = (BTDevice) pair.getValue();
             if (cd.deviceID == id)
             {

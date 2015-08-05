@@ -11,4 +11,6 @@ public interface CBInterface
     void onDeviceFound(String deviceName);
 
     void onDevicePaired(int deviceID);
+
+    void onScanResult(BTScanResult scanResult);
 }
