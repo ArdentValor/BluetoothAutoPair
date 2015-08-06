@@ -206,6 +206,7 @@ public class AutoPairing
         return false;
     }
 
+
     private static void releaseScanResources()
     {
         bondLock = false;
@@ -213,6 +214,7 @@ public class AutoPairing
         if (currentScanMode.equals("BTC"))
         {
             bluetoothAdapter.cancelDiscovery();
+            context.unregisterReceiver(broadcastReceiver);
         }
         else
         {

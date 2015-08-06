@@ -56,9 +56,9 @@ public class MainActivity extends Activity
     {
         super.onStart();
         // test each (these are called by the user/UI for each device individually
-        //AutoPairing.scanByID(1);
+        AutoPairing.scanByID(1);
         //AutoPairing.scanByID(2);
         //AutoPairing.scanByID(3);
-        AutoPairing.scanByID(4);
+        //AutoPairing.scanByID(4);
     }
 }
