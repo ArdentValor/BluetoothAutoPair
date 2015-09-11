@@ -3,8 +3,6 @@ package com.hart.autopairing;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 
 
 public class MainActivity extends Activity
@@ -56,9 +54,11 @@ public class MainActivity extends Activity
     {
         super.onStart();
         // test each (these are called by the user/UI for each device individually
-        AutoPairing.scanByID(1);
-        //AutoPairing.scanByID(2);
+        //AutoPairing.scanByID(1);
+        AutoPairing.scanByID(2);
         //AutoPairing.scanByID(3);
+
+
         //AutoPairing.scanByID(4);
     }
 }

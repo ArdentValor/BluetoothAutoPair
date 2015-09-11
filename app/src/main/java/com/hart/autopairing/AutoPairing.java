@@ -104,6 +104,8 @@ public class AutoPairing
 
                 String name = result.getDevice().getName();
 
+                cbInterface.onDeviceFound(result.getDevice().getName());
+
 
                 if (name != null && name.contains(getNameByID(currentScanID)))
                 {
@@ -228,6 +230,8 @@ public class AutoPairing
         currentScanID = id;
         scanLock = true;
 
+        log("Scanning started");
+
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (getTypeByID(id).equals("BTC"))
@@ -313,5 +317,10 @@ public class AutoPairing
         {
             Log.e("unpairDevice()", e.getMessage());
         }
+    }
+
+    private static void log(String message)
+    {
+        Log.i("AutoParing", message);
     }
 }
